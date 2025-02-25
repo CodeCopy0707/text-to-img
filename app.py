@@ -5,7 +5,7 @@ from diffusers import DiffusionPipeline
 app = Flask(__name__)
 
 # Hugging Face Model Load
-MODEL_NAME = "black-forest-labs/FLUX.1-dev"
+MODEL_NAME = "stabilityai/stable-diffusion-xl-base-1.0"
 pipe = DiffusionPipeline.from_pretrained(MODEL_NAME, torch_dtype=torch.float32)  # CPU mode
 pipe.to("cpu")  # Render free tier ke liye CPU use karna padega
 
