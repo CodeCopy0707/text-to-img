@@ -1,39 +1,33 @@
+from flask import Flask, request, jsonify, send_file
 import torch
-from flask import Flask, request, jsonify
-from diffusers import DiffusionPipeline
+from diffusers import StableDiffusionPipeline
+import os
 
 app = Flask(__name__)
 
-# Hugging Face Model Load (DeepFloyd IF-I-M-v1.0)
-MODEL_NAME = "DeepFloyd/IF-I-M-v1.0"
-pipe = DiffusionPipeline.from_pretrained(
-    MODEL_NAME, 
-    variant="fp16", 
-    torch_dtype=torch.float16
-)
+# Model Load (Lightweight Version)
+model_id = "runwayml/stable-diffusion-v1-5"
+pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float16)
+device = "cuda" if torch.cuda.is_available() else "cpu"
+pipe.to(device)
 
-pipe.to("cpu")  # CPU mode for free-tier compatibility
+@app.route('/generate', methods=['POST'])
+def generate_image():
+    try:
+        data = request.get_json()
+        prompt = data.get("prompt", "")
 
-@app.route("/generate", methods=["POST"])
-def generate():
-    data = request.json
-    prompt = data.get("prompt", "")
+        if not prompt:
+            return jsonify({"error": "Prompt is required"}), 400
 
-    # Encode prompt
-    prompt_embeds, negative_embeds = pipe.encode_prompt(prompt)
+        image = pipe(prompt).images[0]
+        image_path = "generated_image.png"
+        image.save(image_path)
 
-    # Generate Image
-    generator = torch.manual_seed(0)
-    image = pipe(
-        prompt_embeds=prompt_embeds,
-        negative_prompt_embeds=negative_embeds,
-        generator=generator,
-        output_type="pil"
-    ).images[0]
+        return send_file(image_path, mimetype='image/png')
 
-    image.save("output.png")
-    
-    return jsonify({"message": "Image Generated Successfully!"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
