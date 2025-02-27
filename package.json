@@ -7,6 +7,9 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "puppeteer": "^21.0.0"
+    "@types/node": "^18.0.6",
+    "chromium": "^3.0.3",
+    "puppeteer": "^24.3.0",
+    "puppeteer-core": "^24.3.0"
   }
 }
