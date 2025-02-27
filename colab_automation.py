@@ -1,49 +1,16 @@
-import time
-import requests
-from google.colab import auth
-from googleapiclient.discovery import build
+import os
 
-# 🔐 Authenticate Google Account
-print("🔐 Authenticating Google Account...")
-auth.authenticate_user()
+# Install required dependencies
+os.system("pip install pygit2==1.15.1")
 
-# 📂 Access Google Drive
-print("📂 Accessing Google Drive & Colab Notebooks...")
-drive_service = build('drive', 'v3')
+# Change directory to /content (Only for Colab)
+os.chdir("/content")
 
-# 📌 Define Notebook Details
-notebook_url = "https://colab.research.google.com/github/lllyasviel/Fooocus/blob/main/fooocus_colab.ipynb"
-execution_endpoint = "https://colab.research.google.com/execute"
+# Clone the Fooocus repository
+os.system("git clone https://github.com/lllyasviel/Fooocus.git")
 
-# ▶️ Run the Colab Notebook
-print(f"▶️ Running Notebook: {notebook_url}")
-session = requests.Session()
-response = session.post(execution_endpoint, json={"notebook": notebook_url})
+# Change directory to Fooocus
+os.chdir("/content/Fooocus")
 
-if response.status_code == 200:
-    print("✅ Notebook Execution Started Successfully!")
-else:
-    print("❌ Failed to Start Notebook Execution!")
-    print(response.text)
-    exit()
-
-# ⏳ Wait for Notebook Execution
-time.sleep(30)
-
-# 🔍 Extract Generated URLs (Local & Public)
-print("🔍 Fetching Generated Links...")
-
-colab_output = session.get(notebook_url).text  # Fetch the executed notebook's output
-localhost_url = "Not Found"
-public_url = "Not Found"
-
-if "http://127.0.0.1" in colab_output:
-    localhost_url = colab_output.split("http://127.0.0.1")[1].split()[0]
-    localhost_url = "http://127.0.0.1" + localhost_url
-
-if "gradio.live" in colab_output:
-    public_url = colab_output.split("gradio.live")[0].split()[-1]
-
-# ✅ Print Results
-print(f"\n✅ **Localhost URL:** {localhost_url}")
-print(f"✅ **Public URL:** {public_url}")
+# Run the entry script with required parameters
+os.system("python entry_with_update.py --share --always-high-vram")
