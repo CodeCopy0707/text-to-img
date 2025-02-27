@@ -3,7 +3,7 @@ const puppeteer = require("puppeteer");
 (async () => {
     console.log("🚀 Launching browser...");
     const browser = await puppeteer.launch({
-        headless: false, // False rakho taki UI dikhe
+        headless: false, // UI visible rahega
         args: ["--no-sandbox", "--disable-setuid-sandbox"]
     });
 
@@ -15,7 +15,7 @@ const puppeteer = require("puppeteer");
     });
 
     console.log("🔒 Waiting for Colab to load...");
-    await page.waitForTimeout(5000); // Thoda wait karega
+    await page.waitForTimeout(5000); // 5 sec wait
 
     console.log("▶️ Clicking 'Run All'...");
     await page.keyboard.down("Control");
@@ -37,8 +37,24 @@ const puppeteer = require("puppeteer");
 
     console.log("✅ Execution started!");
 
-    // Keep the browser open to keep the session alive
-    while (true) {
-        await page.waitForTimeout(60000); // Har 1 min me check karega
-    }
+    // Wait for the output cell where URLs appear
+    await page.waitForTimeout(15000); // 15 sec wait
+
+    console.log("🔍 Searching for Local & Public URLs...");
+
+    const logs = await page.evaluate(() => {
+        let outputText = "";
+        document.querySelectorAll(".output_text").forEach(el => {
+            outputText += el.innerText + "\n";
+        });
+        return outputText;
+    });
+
+    // Extract URLs
+    const localhostUrl = logs.match(/http:\/\/127\.0\.0\.1:\d+/)?.[0] || "Not found";
+    const publicUrl = logs.match(/https?:\/\/[^\s]+gradio\.live[^\s]*/)?.[0] || "Not found";
+
+    console.log(`\n✅ **Localhost URL:** ${localhostUrl}`);
+    console.log(`✅ **Public URL:** ${publicUrl}\n`);
+
 })();
