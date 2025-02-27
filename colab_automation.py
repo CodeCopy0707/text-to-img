@@ -1,18 +1,47 @@
+import os
+import time
+import re
+import subprocess
+import sys
+
+# ✅ Install Missing Dependencies
+def install_dependencies():
+    print("📦 Installing dependencies...")
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "pip"])
+        dependencies = ["selenium", "webdriver-manager"]
+        subprocess.check_call([sys.executable, "-m", "pip", "install"] + dependencies)
+        print("✅ Dependencies installed successfully!")
+    except Exception as e:
+        print(f"❌ Error installing dependencies: {e}")
+        sys.exit(1)
+
+# ✅ Install Chrome & ChromeDriver (Linux)
+def install_chrome_driver():
+    print("🛠️ Setting up Chrome & ChromeDriver...")
+    os.system("apt-get update && apt-get install -y chromium-browser chromium-chromedriver")
+    os.environ["PATH"] += os.pathsep + "/usr/bin/chromedriver"
+    print("✅ Chrome & ChromeDriver installed!")
+
+# 🔹 Run Dependency Installation
+install_dependencies()
+install_chrome_driver()
+
+# ✅ Import dependencies after installation
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from webdriver_manager.chrome import ChromeDriverManager
-import time
-import re
 
 # 🚀 Launch Browser
 print("🚀 Launching browser...")
 options = webdriver.ChromeOptions()
+options.add_argument("--headless")  # Run without opening UI
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-setuid-sandbox")
 options.add_argument("--disable-dev-shm-usage")
-options.add_experimental_option("detach", True)
+options.add_argument("--remote-debugging-port=9222")
 
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=options)
