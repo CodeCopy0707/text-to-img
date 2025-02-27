@@ -1,88 +1,49 @@
-import os
 import time
-import re
-import subprocess
-import sys
+import requests
+from google.colab import auth
+from googleapiclient.discovery import build
 
-# ✅ Install Missing Dependencies
-def install_dependencies():
-    print("📦 Installing dependencies...")
-    try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "pip"])
-        dependencies = ["selenium", "webdriver-manager"]
-        subprocess.check_call([sys.executable, "-m", "pip", "install"] + dependencies)
-        print("✅ Dependencies installed successfully!")
-    except Exception as e:
-        print(f"❌ Error installing dependencies: {e}")
-        sys.exit(1)
+# 🔐 Authenticate Google Account
+print("🔐 Authenticating Google Account...")
+auth.authenticate_user()
 
-# ✅ Install Chrome & ChromeDriver (Linux)
-def install_chrome_driver():
-    print("🛠️ Setting up Chrome & ChromeDriver...")
-    os.system("apt-get update && apt-get install -y chromium-browser chromium-chromedriver")
-    os.environ["PATH"] += os.pathsep + "/usr/bin/chromedriver"
-    print("✅ Chrome & ChromeDriver installed!")
+# 📂 Access Google Drive
+print("📂 Accessing Google Drive & Colab Notebooks...")
+drive_service = build('drive', 'v3')
 
-# 🔹 Run Dependency Installation
-install_dependencies()
-install_chrome_driver()
+# 📌 Define Notebook Details
+notebook_url = "https://colab.research.google.com/github/lllyasviel/Fooocus/blob/main/fooocus_colab.ipynb"
+execution_endpoint = "https://colab.research.google.com/execute"
 
-# ✅ Import dependencies after installation
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from webdriver_manager.chrome import ChromeDriverManager
+# ▶️ Run the Colab Notebook
+print(f"▶️ Running Notebook: {notebook_url}")
+session = requests.Session()
+response = session.post(execution_endpoint, json={"notebook": notebook_url})
 
-# 🚀 Launch Browser
-print("🚀 Launching browser...")
-options = webdriver.ChromeOptions()
-options.add_argument("--headless")  # Run without opening UI
-options.add_argument("--no-sandbox")
-options.add_argument("--disable-setuid-sandbox")
-options.add_argument("--disable-dev-shm-usage")
-options.add_argument("--remote-debugging-port=9222")
+if response.status_code == 200:
+    print("✅ Notebook Execution Started Successfully!")
+else:
+    print("❌ Failed to Start Notebook Execution!")
+    print(response.text)
+    exit()
 
-service = Service(ChromeDriverManager().install())
-driver = webdriver.Chrome(service=service, options=options)
+# ⏳ Wait for Notebook Execution
+time.sleep(30)
 
-# 🌐 Open Google Colab Notebook
-print("🌐 Opening Google Colab Fooocus notebook...")
-driver.get("https://colab.research.google.com/github/lllyasviel/Fooocus/blob/main/fooocus_colab.ipynb#scrollTo=_vkOYRuWLgQi")
-time.sleep(5)  # Wait for page to load
+# 🔍 Extract Generated URLs (Local & Public)
+print("🔍 Fetching Generated Links...")
 
-# ▶️ Run All (Ctrl + F9)
-print("▶️ Clicking 'Run All'...")
-driver.find_element(By.TAG_NAME, "body").send_keys(Keys.CONTROL + "F9")
-time.sleep(5)
+colab_output = session.get(notebook_url).text  # Fetch the executed notebook's output
+localhost_url = "Not Found"
+public_url = "Not Found"
 
-# ⚠️ Click 'Run Anyway' if warning appears
-try:
-    run_anyway_button = driver.find_element(By.XPATH, "//button[contains(text(), 'Run anyway')]")
-    if run_anyway_button:
-        print("✅ Clicking 'Run Anyway'...")
-        run_anyway_button.click()
-except:
-    print("❌ 'Run Anyway' button not found, proceeding...")
+if "http://127.0.0.1" in colab_output:
+    localhost_url = colab_output.split("http://127.0.0.1")[1].split()[0]
+    localhost_url = "http://127.0.0.1" + localhost_url
 
-print("✅ Execution started!")
+if "gradio.live" in colab_output:
+    public_url = colab_output.split("gradio.live")[0].split()[-1]
 
-# Wait for URLs to appear in output
-time.sleep(20)
-
-print("🔍 Searching for Local & Public URLs...")
-
-# Extract logs from Colab output
-output_text = driver.page_source
-localhost_match = re.search(r'http://127\.0\.0\.1:\d+', output_text)
-public_match = re.search(r'https?:\/\/[^\s]+gradio\.live[^\s]*', output_text)
-
-localhost_url = localhost_match.group(0) if localhost_match else "Not found"
-public_url = public_match.group(0) if public_match else "Not found"
-
+# ✅ Print Results
 print(f"\n✅ **Localhost URL:** {localhost_url}")
-print(f"✅ **Public URL:** {public_url}\n")
-
-# 🔄 Keep Running
-while True:
-    time.sleep(10)
+print(f"✅ **Public URL:** {public_url}")
