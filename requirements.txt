@@ -1,5 +1,0 @@
-flask==2.2.3
-torch==2.0.1
-torchvision==0.15.2
-transformers==4.27.4
-diffusers==0.14.0
