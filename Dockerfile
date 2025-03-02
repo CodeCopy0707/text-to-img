@@ -1,18 +1,23 @@
-# 🐍 Base Image
+# Base image
 FROM python:3.9
 
-# 📂 Set Working Directory
+# Set working directory
 WORKDIR /app
 
-# 📥 Copy Requirements File
-COPY requirements.txt requirements.txt
+# Install system dependencies
+RUN apt-get update && apt-get install -y git && apt-get clean
 
-# 🏗 Install Dependencies
-RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
+# Clone the Stable Diffusion Lite repository
+RUN git clone https://github.com/basujindal/stable-diffusion-cpu.git /app/stable-diffusion
 
-# 📂 Copy Python Script
-COPY colab_automation.py colab_automation.py
+# Set working directory inside the cloned repo
+WORKDIR /app/stable-diffusion
 
-# 🚀 Run the Script
-CMD ["python", "colab_automation.py"]
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Expose the port
+EXPOSE 8080
+
+# Start the app in CPU mode
+CMD ["python", "app.py", "--port", "8080", "--cpu"]
